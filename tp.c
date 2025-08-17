@@ -5,7 +5,8 @@
 void limparBuffer();
 void letraMaiuscula(char *comando);
 void invalido();
-void centralizado(const char *texto);
+void centralizado(char *texto);
+void quebrar(int n);
 
 int main() {
   int jogo = 1;
@@ -13,7 +14,9 @@ int main() {
     char comando;
     
     system("clear");
-    centralizado("\n\n2048!\n\n\tby Angelo Resende\n\n\n\n\n");
+    printf("\n\n\n");
+    centralizado("2048!\n\n");
+    centralizado("by Angelo Resende\n\n\n\n");
     centralizado("O que deseja fazer?\n\n\n");
     centralizado("(N) Novo jogo\n\n");
     centralizado("(J) Continuar jogo atual\n\n");
@@ -23,7 +26,7 @@ int main() {
     centralizado("(A) Ajuda com as instruções de como jogar\n\n");
     centralizado("(R) Sair\n\n");
     
-    printf("\n\n\n\tComando: ");
+    printf("\n\n\n\n\n\tComando: ");
     scanf(" %c", &comando);
     limparBuffer();
     letraMaiuscula(&comando);
@@ -53,9 +56,9 @@ int main() {
           printf("\n\t\t\t\t\t- A cada movimento, um novo número aparece aleatoriamente em um local vazio do tabuleiro.\n");
           printf("\n\t\t\t\t\t- As peças deslizam o mais longe possível até colidirem.\n");
           printf("\n\t\t\t\t\t- Duas peças iguais que se colidirem irão se fundir em uma peça com o valor total das duas peças.\n");
-          printf("\n\n\t\t\t\tEsse é o 2048.");
+          printf("\n\n\t\t\t\tEsse é o 2048.\n\n");
           
-          printf("\n\n(R) Voltar ao menu\n\n\tComando: ");
+          centralizado("(R) Voltar ao menu\n\n\tComando: ");
           
           char comando2;
           scanf(" %c", &comando2);
@@ -71,9 +74,12 @@ int main() {
       case 'R':
         while(1 != 0) {
           system("clear");
-          printf("\nTem certeza que deseja sair?");
-          printf("\n(S) Sim\n(N) Não");
-          printf("\n\n\tComando: ");
+          quebrar(19);
+          centralizado("Tem certeza que deseja sair?");
+          centralizado("(S) Sim");
+          centralizado("(N) Nao");
+          quebrar(19);
+          printf("\tComando: ");
           
           char confirma;
           scanf(" %c", &confirma);
@@ -114,13 +120,35 @@ void letraMaiuscula(char *comando) {
 }
 
 // Imprime mensagem de comando inválido
-void invalido(){
+void invalido() {
   printf("\tComando inválido. Pressione enter para continuar.");
   limparBuffer();
 }
 
 // Centraliza o texto no centro da tela
-void centralizado(const char *texto){
-  int n = (184 - strlen(texto)) / 2;
-  printf("%*s\n", (int)(n + strlen(texto)), texto);
+void centralizado(char *texto) {
+  int tamTxt, quebra, n, acentos;
+  
+  tamTxt = strlen(texto);
+  quebra = 0;
+  acentos = 0;
+  
+  // Calcular quebras e acentos
+  for (int i = 0; i < tamTxt; i++)
+    if (texto[i] == '\n')
+      quebra += 1;
+    else if (texto[i] == '´' || 
+      acentos += 1;
+  
+  // Tamanho de espaços a serem colocados à esquerda do texto
+  n = (184 - (tamTxt - quebra - acentos)) / 2;
+  
+  // Imprime o texto adicionando n espaços à esquerda
+  printf("%*s", (int)(n + tamTxt), texto);
+}
+
+// Quebra n linhas
+void quebrar(int n) {
+  for (int i = 0; i < n; i++)
+    printf("\n");
 }
