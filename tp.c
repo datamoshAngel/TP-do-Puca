@@ -5,9 +5,11 @@
 #define ANSI_RESET            "\x1b[0m"
 #define ANSI_BOLD             "\x1b[1m"
 #define ANSI_BG_COLOR_RED     "\x1b[41m"
+#define ANSI_BG_COLOR_WHITE   "\x1b[47m"
 
 #define BOLD(string)       ANSI_BOLD             string ANSI_RESET
 #define BG_RED(string)     ANSI_BG_COLOR_RED     string ANSI_RESET
+#define BG_WHITE(string)   ANSI_BG_COLOR_WHITE   string ANSI_RESET
 
 void limparBuffer();
 void letraMaiuscula(char *comando);
@@ -15,6 +17,7 @@ void invalido();
 void centralizado(char *texto);
 void quebrar(int n);
 void margem(int n);
+void imprimirTitulo();
 
 int main() {
   int jogo = 1;
@@ -23,8 +26,9 @@ int main() {
     
     system("clear");
     quebrar(4);
-    centralizado(BG_RED(BOLD("2048!")) "\n\n\n");
-    centralizado("by Angelo Resende\n\n");
+    imprimirTitulo();
+    quebrar(1);
+    centralizado("Angelo Resende da Silva              25.1.4013\n\n");
     quebrar(3);
     centralizado("O que deseja fazer?\n\n");
     centralizado(BOLD("(N)") " Novo jogo\n");
@@ -35,7 +39,7 @@ int main() {
     centralizado(BOLD("(A)") " Ajuda com as instruções de como jogar\n");
     centralizado(BOLD("(R)") " Sair");
     
-    quebrar(11);
+    quebrar(9);
     printf("\t" BOLD("Comando:") " ");
     scanf(" %c", &comando);
     limparBuffer();
@@ -60,7 +64,9 @@ int main() {
       case 'A':
         while (1 != 0) {
           system("clear");
-          quebrar(2);
+          quebrar(4);
+          imprimirTitulo();
+          quebrar(6);
           margem(4);
           printf("2048 é um jogo de raciocínio onde o objetivo é deslizar peças numeradas em um tabuleiro e combiná-las até formar um\n"); 
           margem(4);
@@ -78,7 +84,7 @@ int main() {
           
           quebrar(5);
           centralizado(BOLD("(R)") " Voltar ao menu");
-          quebrar(20);
+          quebrar(7);
           
           printf("\t" BOLD("Comando:") " ");
           char comando2;
@@ -95,7 +101,9 @@ int main() {
       case 'R':
         while(1 != 0) {
           system("clear");
-          quebrar(19);
+          quebrar(4);
+          imprimirTitulo();
+          quebrar(10);
           centralizado("Tem certeza que deseja sair?");
           centralizado(BOLD("(S)") " Sim");
           centralizado(BOLD("(N)") " Não");
@@ -148,24 +156,39 @@ void invalido() {
 
 // Centraliza o texto no centro da tela
 void centralizado(char *texto) {
-  int tamTxt, quebra, n, acentos;
+  int tamanho, emANSI, n;
   
-  tamTxt = strlen(texto);
-  quebra = 0;
-  acentos = 0;
+  tamanho = 0;
+  emANSI = 0;
   
-  // Calcular quebras e acentos
-  for (int i = 0; i < tamTxt; i++)
-    if (texto[i] == '\n')
-      quebra += 1;
-    else if (texto[i] == '´' || texto[i] == '`' || texto[i] == '~' || texto[i] == '^')
-      acentos += 1;
+  // Conta o tamanho do texto entre aspas 
+  for (int i = 0; texto[i] != '\0'; i++) {
+    if (texto[i] == '\x1b') {
+      emANSI = 1;
+      continue;
+    }
+      
+    if (emANSI) {
+      if (texto[i] == 'm') {
+        emANSI = 0;
+      }
+      continue;
+    }
+    
+    if (texto[i] != '"' && texto[i] != '\n') {
+      tamanho += 1;
+    }
+  }
   
-  // Tamanho de espaços a serem colocados à esquerda do texto
-  n = (184 - (tamTxt - quebra - acentos)) / 2;
+  // Número de espaços a serem colocados à esquerda do texto
+  n = (184 - tamanho) / 2;
   
   // Imprime o texto adicionando n espaços à esquerda
-  printf("%*s\n", (int)(n + tamTxt), texto);
+  for (int i = 0; i < n; i++){
+    printf(" ");
+  }
+  
+  printf("%s\n", texto);
 }
 
 // Quebra n linhas
@@ -178,4 +201,13 @@ void quebrar(int n) {
 void margem(int n) {
   for (int i = 0; i < n; i++)
     printf("\t");
+}
+
+// Imprime o título do jogo
+void imprimirTitulo() {
+  centralizado(BG_WHITE("          ") "  " BG_WHITE("          ") "  " BG_WHITE("  ") "    " BG_WHITE("    ") "  " BG_WHITE("          "));
+  centralizado("      " BG_WHITE("    ") "  " BG_WHITE("  ") "    " BG_WHITE("    ") "  " BG_WHITE("  ") "    " BG_WHITE("    ") "  " BG_WHITE("  ") "    " BG_WHITE("    "));
+  centralizado(BG_WHITE("          ") "  " BG_WHITE("  ") "    " BG_WHITE("    ") "  " BG_WHITE("          ") "  " BG_WHITE("          "));
+  centralizado(BG_WHITE("  ") "          " BG_WHITE("  ") "    " BG_WHITE("    ") "        " BG_WHITE("    ") "  " BG_WHITE("  ") "    " BG_WHITE("    "));
+  centralizado(BG_WHITE("          ") "  " BG_WHITE("          ") "        " BG_WHITE("    ") "  " BG_WHITE("          "));
 }
