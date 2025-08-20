@@ -22,14 +22,13 @@ void imprimirTitulo();
 int main() {
   int jogo = 1;
   while (jogo != 0) {
-    char comando;
-    
     system("clear");
+    
     quebrar(4);
     imprimirTitulo();
     quebrar(1);
     centralizado("Angelo Resende da Silva              25.1.4013\n\n");
-    quebrar(3);
+    quebrar(4);
     centralizado("O que deseja fazer?\n\n");
     centralizado(BOLD("(N)") " Novo jogo\n");
     centralizado(BOLD("(J)") " Continuar jogo atual\n");
@@ -39,11 +38,22 @@ int main() {
     centralizado(BOLD("(A)") " Ajuda com as instruções de como jogar\n");
     centralizado(BOLD("(R)") " Sair");
     
-    quebrar(9);
+    quebrar(8);
     printf("\t" BOLD("Comando:") " ");
+    
+    char comando;
     scanf(" %c", &comando);
     limparBuffer();
     letraMaiuscula(&comando);
+    
+    /* if // N
+    else if // J
+    else if // C
+    else if // S
+    else if // M
+    else if // A
+    else if // R
+    else // Outro */
     
     switch (comando) {
       case 'N':
@@ -64,13 +74,14 @@ int main() {
       case 'A':
         while (1 != 0) {
           system("clear");
+          
           quebrar(4);
           imprimirTitulo();
           quebrar(6);
           margem(4);
-          printf("2048 é um jogo de raciocínio onde o objetivo é deslizar peças numeradas em um tabuleiro e combiná-las até formar um\n"); 
+          printf("2048 é um jogo de raciocínio onde o objetivo é deslizar peças numeradas em um tabuleiro e combiná-las até formar um bloco\n"); 
           margem(4);
-          printf("bloco com o número 2048.\n\n\n");
+          printf("com o número 2048.\n\n\n");
           margem(5);
           printf("- O jogador desliza as peças em um dos quatro sentidos (cima, baixo, esquerda e direita)\n\n");
           margem(5);
@@ -84,9 +95,10 @@ int main() {
           
           quebrar(5);
           centralizado(BOLD("(R)") " Voltar ao menu");
-          quebrar(7);
           
+          quebrar(7);
           printf("\t" BOLD("Comando:") " ");
+          
           char comando2;
           scanf(" %c", &comando2);
           limparBuffer();
@@ -101,12 +113,15 @@ int main() {
       case 'R':
         while(1 != 0) {
           system("clear");
+          
           quebrar(4);
           imprimirTitulo();
           quebrar(10);
+          
           centralizado("Tem certeza que deseja sair?");
           centralizado(BOLD("(S)") " Sim");
           centralizado(BOLD("(N)") " Não");
+          
           quebrar(19); 
           printf("\t" BOLD("Comando:") " ");
           
@@ -116,6 +131,7 @@ int main() {
           letraMaiuscula(&confirma);
           
           if (confirma == 'S') {
+            system("clear");
             jogo = 0;
             break;
           }
