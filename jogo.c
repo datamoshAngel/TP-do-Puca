@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <math.h>
+
+#define BLOCOVOLTAR 4
 
 // cores e formato de texto
 #define ANSI_RESET            "\x1b[0m"  // desativa os efeitos anteriores
@@ -60,7 +63,11 @@
 void imprimirMatriz(int** matriz, int n);
 void gerarBloco(int*** matriz, int n);
 void espacos(int n);
-void moverMatriz(int*** m, int*** mA, int n, char c);
+void moverMatriz(int*** m, int n, char c);
+void somarBlocos(int*** m, int n, char c, int* nVoltar);
+void copiarMatriz(int*** destino, int*** origem, int n);
+void voltarJogada(int*** m, int ***mA);
+int algarismosMaiorNumero(int*** m, int n);
 
 void limparBuffer();
 void letraMaiuscula(char* comando);
@@ -70,10 +77,14 @@ void quebrar(int n);
 void margem(int n);
 void imprimirTitulo();
 
+/************************* MAIN *************************/
+
 int main() {
   int **matriz, **matrizAnterior;
   int jogo = 1;
   int n = 0;
+  int nVoltar = 0;
+  int gerar = 1;
   srand(time(NULL));
   
   do{
@@ -112,7 +123,7 @@ int main() {
   for (int i = 0; i < n; i++)
     for (int j = 0; j < n; j++) {
       matriz[i][j] = 0;
-      matrizAnterior[i][j] = 0
+      matrizAnterior[i][j] = 0;
     }
   
   /* ----- JOGO ----- */
@@ -122,12 +133,23 @@ int main() {
     quebrar(2);
     imprimirTitulo();
     
-    quebrar(11-n);
-    gerarBloco(&matriz, n);
+    quebrar(13-2*n);
+    if (!gerar) {
+      gerar = 1;
+    } else {
+      gerarBloco(&matriz, n);
+    }
     imprimirMatriz(matriz, n);
-    quebrar(13-n);
+    quebrar(14-2*n);
     
-    centralizado(BOLD("<W, A, S, D>") " Mover    " BOLD("<U>") " Dezfazer último movimento    " BOLD("<T> <Posição 1> <Posição 2>") " Troca a peça 1 pela peça 2    " BOLD("<V>") " Volta para o menu inicial");
+    centralizado(BOLD("<W, A, S, D>") " Mover");
+    centralizado(BOLD("<U>") " Dezfazer último movimento");
+    centralizado(BOLD("<T> <Posição 1> <Posição 2>") " Troca a peça 1 pela peça 2");
+    centralizado(BOLD("<V>") " Volta para o menu inicial");
+    
+    printf("Voltar: %d", nVoltar);
+    
+    quebrar (2);
     
     char comando2[3]; // 1 caractere + enter + \0 -> Garante que apenas aceite um caractere, e não uma palavra
     printf("\n\t" BOLD("Comando: "));
@@ -135,10 +157,23 @@ int main() {
     letraMaiuscula(comando2);
 
     if (strcmp(comando2, "W\n") == 0 || strcmp(comando2, "A\n") == 0 || strcmp(comando2, "S\n") == 0 || strcmp(comando2, "D\n") == 0) {
-    
-      moverMatriz(&matriz, &matrizAnterior, n, comando2[0]);
+      
+      // Salva o estado do tabuleiro anterior
+      copiarMatriz(&matrizAnterior, &matriz, n);
+      
+      moverMatriz(&matriz, n, comando2[0]);
+      somarBlocos(&matriz, n, comando2[0], &nVoltar);
+      moverMatriz(&matriz, n, comando2[0]);
       
     } else if (strcmp(comando2, "U\n") == 0) {
+    
+      // Retorna o tabuleiro para o movimento anterior
+      if (nVoltar > 0) {
+        voltarJogada(&matriz, &matrizAnterior);
+        nVoltar--;
+      }
+      
+      gerar = 0; // Faz com que o tabuleiro não seja alterado
       
     } else if (strcmp(comando2, "T\n") == 0) {
       
@@ -146,16 +181,24 @@ int main() {
         jogo = 0;
         system("clear");
         break;
+    } else {
+      invalido();
+      gerar = 0;
     }
   }
   
   // Liberar memória alocada
-  for (int i = 0; i < n; i++)
+  for (int i = 0; i < n; i++) {
     free(matriz[i]);
+    free(matrizAnterior[i];
+  }
   free(matriz);
+  free(matrizAnterior);
   
   return 0;
 }
+
+/************************* FUNÇÕES *************************/
 
 // Imprime o tabuleiro do jogo
 void imprimirMatriz(int **matriz, int n) {
@@ -220,22 +263,176 @@ void espacos(int n) {
     printf(" ");
 }
 
-void moverMatriz(int*** m, int*** mA, int n, char c){
+// Realiza o movimento do tabuleiro
+void moverMatriz(int*** m, int n, char c){
   switch (c) {
     case 'W':
       
-      for (int i = 0; i < n; i++)
-        for (int j = 0; j < n; j++)
-          
-        
+      for (int j = 0; j < n; j++) {
+        for (int i = 0; i < n; i++) {
+          if ((*m)[i][j] == 0) {
+            for (int k = i+1; k < n; k++) {
+              if ((*m)[k][j] != 0) {
+                (*m)[i][j] = (*m)[k][j];
+                (*m)[k][j] = 0;
+                break;
+              }
+            }
+          }
+        }
+      }
+      
       break;
     case 'A':
+
+      for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+          if ((*m)[i][j] == 0) {
+            for (int k = j+1; k < n; k++) {
+              if ((*m)[i][k] != 0) {
+                (*m)[i][j] = (*m)[i][k];
+                (*m)[i][k] = 0;
+                break;
+              }
+            }
+          }
+        }
+      }
+
       break;
     case 'S':
+    
+      for (int j = 0; j < n; j++) {
+        for (int i = n-1; 0 <= i; i--) {
+          if ((*m)[i][j] == 0) {
+            for (int k = i-1; 0 <= k; k--) {
+              if ((*m)[k][j] != 0) {
+                (*m)[i][j] = (*m)[k][j];
+                (*m)[k][j] = 0;
+                break;
+              }
+            }
+          }
+        }
+      }
+    
       break;
     case 'D':
+    
+      for (int i = 0; i < n; i++) {
+        for (int j = n-1; 0 <= j; j--) {
+          if ((*m)[i][j] == 0) {
+            for (int k = j-1; 0 <= k; k--) {
+              if ((*m)[i][k] != 0) {
+                (*m)[i][j] = (*m)[i][k];
+                (*m)[i][k] = 0;
+                break;
+              }
+            }
+          }
+        }
+      }
+    
       break;
   }
+}
+
+void somarBlocos(int*** m, int n, char c, int* nVoltar) {
+  switch (c) {
+    case 'W':
+      for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+          if (i + 1 < n && (*m)[i][j] != 0 && (*m)[i][j] == (*m)[i + 1][j]) {
+            (*m)[i][j] *= 2;
+            (*m)[i + 1][j] = 0;
+            
+            if ((*m)[i][j] == BLOCOVOLTAR) {
+              (*nVoltar) += 1;
+            }
+          }
+        }
+      }
+      break;
+    case 'A':
+      for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+          if (j + 1 < n && (*m)[i][j] != 0 && (*m)[i][j] == (*m)[i][j+1]) {
+            (*m)[i][j] *= 2;
+            (*m)[i][j + 1] = 0;
+            
+            if ((*m)[i][j] == BLOCOVOLTAR) {
+              (*nVoltar) += 1;
+            }
+          }
+        }
+      }
+      break;
+    case 'S':
+      for (int i = n-1; 0 <= i; i--) {
+        for (int j = 0; j < n; j++) {
+          if (i - 1 >= 0 && (*m)[i][j] != 0 && (*m)[i][j] == (*m)[i-1][j]) {
+            (*m)[i][j] *= 2;
+            (*m)[i - 1][j] = 0;
+            
+            if ((*m)[i][j] == BLOCOVOLTAR) {
+              (*nVoltar) += 1;
+            }
+          }
+        }
+      }
+      break;
+    case 'D':
+      for (int i = 0; i < n; i++) {
+        for (int j = n-1; 0 <= j; j--) {
+          if (j - 1 >= 0 && (*m)[i][j] != 0 && (*m)[i][j] == (*m)[i][j-1]) {
+            (*m)[i][j] *= 2;
+            (*m)[i][j - 1] = 0;
+            
+            if ((*m)[i][j] == BLOCOVOLTAR) {
+              (*nVoltar) += 1;
+            }
+          }
+        }
+      }
+      break;
+  }
+}
+
+// Copia cada um dos elementos de uma matriz para outra
+void copiarMatriz(int*** destino, int*** origem, int n) {
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < n; j++) {
+      (*destino)[i][j] = (*origem)[i][j];
+    }
+  }
+}
+
+// Transforma a jogada atual na anterior e a última jogada na que era a atual
+void voltarJogada(int*** m, int ***mA) {
+  int** aux = *m;
+  *m = *mA;
+  *mA = aux;
+}
+
+// Retorna o número de algarismos do maior número da matriz
+int algarismosMaiorNumero(int*** m, int n) {
+  int maior = 0;
+  
+  // Descobrindo o maior valor do tabuleiro
+  for (int i = 0; i < n ; i++) {
+    for (int j = 0; j < n ; j++) {
+      if ((*m)[i][j] > maior) {
+        maior = (*m)[i][j];
+      }
+    }
+  }
+  
+  if (maior == 0) {
+    return 1; // Não é possível calcular log 0
+  }
+  
+  // Equação que retorna o número de algarismos de um número
+  return (int)log10(maior) + 1;
 }
 
 /*
@@ -268,9 +465,8 @@ void limparBuffer() {
 
 // Converte o comando para maiúsculo, se necessário.
 void letraMaiuscula(char* comando) {
-  for (int i = 0; i < 7; i++)
-    if (97 <= (*comando) && (*comando) <= 122) // Checa se o texto está em minúsculo
-      (*comando) -= 32; // Converte o texto para maiúsculo
+  if (97 <= (*comando) && (*comando) <= 122) // Checa se o texto está em minúsculo
+    (*comando) -= 32; // Converte o texto para maiúsculo
 }
 
 // Imprime mensagem de comando inválido
