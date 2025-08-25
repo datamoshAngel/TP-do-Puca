@@ -1,3 +1,15 @@
+/************** TRABALHO PRÁTICO DO PUCA: JOGO "2048" **************/
+/*              ANGELO RESENDE DA SILVA    25.1.4013               */
+
+/* 
+ *  Ao jogar, por favor, considere:
+ *    - Usar o terminal em tela cheia no Linux Ubuntu
+ *    - Usar fonte: Ubuntu Mono 14
+ *  A formatação do jogo foi feita levando essas configurações
+ *  em consideração
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -68,6 +80,8 @@
 void limparBuffer();
 void imprimirTitulo();
 void espacos(int n);
+void espacosPretos();
+void espacosBrancos();
 void quebrar(int n);
 void margem(int n);
 void centralizado(char *texto);
@@ -143,7 +157,7 @@ int main() {
         
         // Inserir comando
         printf("\t" BOLD("Comando: "));
-        scanf("%d", &tamanho);
+        scanf("%d", &tamanhoTabuleiro);
 
         if (tamanhoTabuleiro < 4 || 6 < tamanhoTabuleiro) { // Aceita apenas os tamanhos válidos
           limparBuffer();
@@ -171,11 +185,14 @@ int main() {
       while (jogo) {
         system("clear");
         
+        //DEbug
+        matriz[0][0] = 0;
+        
         // Imprimir cabeçário
         quebrar(2);
         imprimirTitulo(); 
         
-        // Confirmar se deve gerar um bloco novo
+        // Vê se deve gerar um bloco novo
         if (!gerar) {
           gerar = 1;
         } else {
@@ -233,7 +250,7 @@ int main() {
       
       // Liberar memória alocada
       for (int i = 0; i < tamanhoTabuleiro; i++) {
-        free(matriz[i]); free(matrizAnterior[i];
+        free(matriz[i]); free(matrizAnterior[i]);
       }
       free(matriz); free(matrizAnterior);
     
@@ -318,7 +335,7 @@ int main() {
         
         if (strcmp(comando2, "S\n") == 0) {
           system("clear");
-          jogo = 0; // Encerra o jogo
+          programa = 0; // Encerra o jogo
         }
         else if (strcmp(comando2, "N\n") == 0) {
           sair = 0; // Finaliza o while e retorna para o menu
@@ -337,37 +354,91 @@ int main() {
 
 /************************* FUNÇÕES *************************/
 
+// Adiciona n espaços pretos
+void espacosPretos(int n) {
+  for (int i = 0; i < n; i++)
+    printf(BG_BLACK(" "));
+}
+
+/***********************************************************/
+
+// Adiciona n espaços brancos
+void espacosBrancos(int n) {
+  for (int i = 0; i < n; i++)
+    printf(BG_WHITE(" "));
+}
+
+/***********************************************************/
+
+
+
+/***********************************************************/
+
 // Imprime o tabuleiro do jogo
 void imprimirMatriz(int **matriz, int n) {
   
-  int larguraTab = 9*n + 2; // Largura do tabuleiro
-  int k = (184 - larguraTab) / 2; // Espaços para centralizar o tabuleiro
+  int x = algarismosMaiorNumero(&matriz, n); // quantidade de algarismos do maior número
+  int larguraTab = 8*n + n*x + 2; // largura do tabuleiro
+  int k = (184 - larguraTab) / 2; // espaços para centralizar o tabuleiro
   
-  espacos(k);
-  for (int i = 0; i < larguraTab; i++) // Imprime uma linha branca
-    printf(BG_WHITE(" "));
+  // Imprime a primeira linha
+  espacos(k); // Centraliza o tabuleiro
+  espacosBrancos(larguraTab);
   
+  // Imprime as próximas 4 linhas n vezes
   for (int i = 0; i < n; i++) {
+    
+    // Imprime a linha 4i + 2
     printf("\n");
     espacos(k);
-    for (int j = 0; j < n; j++) // Imprime um quadrado branco, um espaçamento
-      printf(BG_WHITE("  ") "       ");
-    printf(BG_WHITE("  ")); // Imprime um quadrado branco pra fechar a linha
+    for (int j = 0; j < n; j++) {
+      printf(BG_WHITE("  "));
+      espacosPretos(6 + x);
+    }
+    printf(BG_WHITE("  "));
     
+    // Imprime a linha 4i + 3
     printf("\n");
     espacos(k);
-    for (int j = 0; j < n; j++)
-      printf(BG_WHITE("  ") "   %d   ", matriz[i][j]); // Imprime um quadrado branco e um espaçamento com o número no meio
-    printf(BG_WHITE("  ") "\n"); // Imprime um quadrado branco pra fechar a linha
+    for (int j = 0; j < n; j++) {
+      printf(BG_WHITE("  "));
+      espacosPretos(3);
+      switch (matriz[i][j]) {
+        case 0: espacosPretos(x+1); break;
+        case 2: printf(BG_BLACK("\x1b[32m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]);      printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
+        case 4: printf(BG_BLACK("\x1b[92m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]);      printf(BLACK(BG_BLACK("%*d")), x /2+1, 0); break;
+        case 8: printf("\x1b[42;30m%*d\x1b[0m", (int)ceil(x/2.0), matriz[i][j]);             printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
+        case 16: printf(BG_BLACK("\x1b[33m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]);     printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
+        case 32: printf(BG_BLACK("\x1b[93m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]);     printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
+        case 64: printf("\x1b[43;30m%*d\x1b[0m", (int)ceil(x/2.0), matriz[i][j]);            printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
+        case 128: printf(BG_BLACK("\x1b[31m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]);    printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
+        case 256: printf(BG_BLACK("\x1b[91m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]);    printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
+        case 512: printf("\x1b[41;37m%*d\x1b[0m", (int)ceil(x/2.0), matriz[i][j]);           printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
+        case 1024: printf(BG_BLACK("\x1b[35m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]);   printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
+        case 2048: printf(BG_BLACK("\x1b[95m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]);   printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
+        case 4096: printf("\x1b[45;37m%*d\x1b[0m", (int)ceil(x/2.0), matriz[i][j]);          printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
+        case 8192: printf(BG_BLACK("\x1b[36m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]);   printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
+        case 16384: printf(BG_BLACK("\x1b[96m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]);  printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
+        case 32768: printf("\x1b[46;30m%*d\x1b[0m", (int)ceil(x/2.0), matriz[i][j]);         printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
+        case 65536: printf(BG_BLACK("\x1b[34m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]);  printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
+        case 131072: printf(BG_BLACK("\x1b[94m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]); printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
+        default: printf("\x1b[46;30m%*d\x1b[0m", (int)ceil(x/2.0), matriz[i][j]);            printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
+      }
+      espacosPretos(2);
+    }
+    printf(BG_WHITE("  ") "\n");
     espacos(k);
     
-    for (int j = 0; j < n; j++) // Imprime um quadrado branco, um espaçamento
-      printf(BG_WHITE("  ") "       ");
-    printf(BG_WHITE("  ") "\n"); // Imprime um quadrado branco pra fechar a linha
-    espacos(k);
+    // Imprime a linha 4i + 4
+    for (int j = 0; j < n; j++) {
+      printf(BG_WHITE("  "));
+      espacosPretos(6 + x);
+    }
+    printf(BG_WHITE("  ") "\n");
     
-    for (int j = 0; j < larguraTab; j++) // Imprime uma linha branca
-      printf(BG_WHITE(" "));
+    // Imprime a última linha
+    espacos(k);
+    espacosBrancos(larguraTab);
   }
 }
 
@@ -375,30 +446,30 @@ void imprimirMatriz(int **matriz, int n) {
 
 // Adiciona um bloco em uma casa vazia da matriz
 void gerarBloco(int*** matriz, int n) {
-  int x = rand()%n;
-  int y = rand()%n;
-  int r = rand()%10;
+  int x; // índice aleatório da coluna
+  int y; // índice aleatório da linha
+  int r; // número aleatório entre 1 e 100
 
   do {
     x = rand()%n;
     y = rand()%n;
-    r = rand()%10;
+    r = (rand()%100) + 1;
     
-    if ((*matriz)[x][y] == 0) {
-      if (r != 0) {
-        (*matriz)[x][y] = 2;
+    if ((*matriz)[x][y] == 0) { // Se o bloco estiver vazio
+      if (r <= (5*n - 10)) { //"r" é menor que 5n-10. Efetivamente dá 10% de chance para n = 4, 15% para n = 5 e 20% para n = 6
+        (*matriz)[x][y] = 4;
         break;
       } else {
-        (*matriz)[x][y] = 4;
+        (*matriz)[x][y] = 2;
         break;
       }
     }
-  } while ((*matriz)[x][y] != 0);
+  } while ((*matriz)[x][y] != 0); // Enquanto o bloco sorteado estiver preenchido
 }
 
 /***********************************************************/
 
-// Adiciona n espaços
+// Dá n espaços
 void espacos(int n) {
   for (int i = 0; i < n; i++)
     printf(" ");
@@ -409,12 +480,21 @@ void espacos(int n) {
 // Realiza o movimento do tabuleiro
 void moverMatriz(int*** m, int n, char c){
   switch (c) {
-    case 'W':
-      
+    case 'W': // Cima
       for (int j = 0; j < n; j++) {
         for (int i = 0; i < n; i++) {
+        /*
+         *    Começa aqui
+         *    |   depois aqui
+         *    v   v   ... ...
+         * | [ ] [ ] [ ] [ ]
+         * | [ ] [ ] [ ] [ ]
+         * | [ ] [ ] [ ] [ ]
+         * v [ ] [ ] [ ] [ ]
+         *
+         */
           if ((*m)[i][j] == 0) {
-            for (int k = i+1; k < n; k++) {
+            for (int k = i+1; k < n; k++) { // Procura o próximo bloco preenchido na coluna
               if ((*m)[k][j] != 0) {
                 (*m)[i][j] = (*m)[k][j];
                 (*m)[k][j] = 0;
@@ -426,12 +506,19 @@ void moverMatriz(int*** m, int n, char c){
       }
       
       break;
-    case 'A':
-
+    case 'A': // Esquerda
       for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
+        /*
+         *                -------------->
+         * Começa aqui -> [ ] [ ] [ ] [ ]
+         * depois aqui -> [ ] [ ] [ ] [ ]
+         *            ... [ ] [ ] [ ] [ ]
+         *            ... [ ] [ ] [ ] [ ]
+         *
+         */
           if ((*m)[i][j] == 0) {
-            for (int k = j+1; k < n; k++) {
+            for (int k = j+1; k < n; k++) { // Procura o próximo bloco preenchido na linha
               if ((*m)[i][k] != 0) {
                 (*m)[i][j] = (*m)[i][k];
                 (*m)[i][k] = 0;
@@ -443,12 +530,21 @@ void moverMatriz(int*** m, int n, char c){
       }
 
       break;
-    case 'S':
-    
+    case 'S': // Baixo
       for (int j = 0; j < n; j++) {
         for (int i = n-1; 0 <= i; i--) {
+        /*
+         * ^ [ ] [ ] [ ] [ ]
+         * | [ ] [ ] [ ] [ ]
+         * | [ ] [ ] [ ] [ ]
+         * | [ ] [ ] [ ] [ ]
+         *    ^   ^   ... ...
+         *    |   depois aqui
+         *    Começa aqui
+         *
+         */
           if ((*m)[i][j] == 0) {
-            for (int k = i-1; 0 <= k; k--) {
+            for (int k = i-1; 0 <= k; k--) { // Procura o próximo bloco preenchido na  coluna
               if ((*m)[k][j] != 0) {
                 (*m)[i][j] = (*m)[k][j];
                 (*m)[k][j] = 0;
@@ -460,12 +556,19 @@ void moverMatriz(int*** m, int n, char c){
       }
     
       break;
-    case 'D':
-    
+    case 'D': // Direita
       for (int i = 0; i < n; i++) {
         for (int j = n-1; 0 <= j; j--) {
+        /*
+         * <--------------
+         * [ ] [ ] [ ] [ ] <- Começa aqui
+         * [ ] [ ] [ ] [ ] <- depois aqui
+         * [ ] [ ] [ ] [ ] ...
+         * [ ] [ ] [ ] [ ] ...
+         *
+         */
           if ((*m)[i][j] == 0) {
-            for (int k = j-1; 0 <= k; k--) {
+            for (int k = j-1; 0 <= k; k--) { // Procura o próximo bloco preenchido na linha
               if ((*m)[i][k] != 0) {
                 (*m)[i][j] = (*m)[i][k];
                 (*m)[i][k] = 0;
@@ -480,58 +583,97 @@ void moverMatriz(int*** m, int n, char c){
   }
 }
 
+/***********************************************************/
+
 void somarBlocos(int*** m, int n, char c, int* nVoltar) {
   switch (c) {
-    case 'W':
+    case 'W': // Cima
       for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
-          if (i + 1 < n && (*m)[i][j] != 0 && (*m)[i][j] == (*m)[i + 1][j]) {
+        /*
+         *    Começa aqui
+         *    |   depois aqui
+         *    v   v   ... ...
+         * | [ ] [ ] [ ] [ ]
+         * | [ ] [ ] [ ] [ ]
+         * | [ ] [ ] [ ] [ ]
+         * v [ ] [ ] [ ] [ ]
+         *
+         */
+        
+          if (i + 1 < n && (*m)[i][j] != 0 && (*m)[i][j] == (*m)[i + 1][j]) { // Checa se o índice checado é válido e se os blocos são iguais
             (*m)[i][j] *= 2;
             (*m)[i + 1][j] = 0;
             
-            if ((*m)[i][j] == BLOCOVOLTAR) {
+            if ((*m)[i][j] == BLOCOVOLTAR) { // Checa se foi formado um bloco que dá +1 "Voltar Jogada"
               (*nVoltar) += 1;
             }
           }
         }
       }
       break;
-    case 'A':
+    case 'A': // Esquerda
       for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
-          if (j + 1 < n && (*m)[i][j] != 0 && (*m)[i][j] == (*m)[i][j+1]) {
+        /*
+         *                -------------->
+         * Começa aqui -> [ ] [ ] [ ] [ ]
+         * depois aqui -> [ ] [ ] [ ] [ ]
+         *            ... [ ] [ ] [ ] [ ]
+         *            ... [ ] [ ] [ ] [ ]
+         *
+         */
+          if (j + 1 < n && (*m)[i][j] != 0 && (*m)[i][j] == (*m)[i][j+1]) { // Checa se o índice checado é válido e se os blocos são iguais
             (*m)[i][j] *= 2;
             (*m)[i][j + 1] = 0;
-            
-            if ((*m)[i][j] == BLOCOVOLTAR) {
+
+            if ((*m)[i][j] == BLOCOVOLTAR) { // Checa se foi formado um bloco que dá +1 "Voltar Jogada"
               (*nVoltar) += 1;
             }
           }
         }
       }
       break;
-    case 'S':
+    case 'S': // Baixo
       for (int i = n-1; 0 <= i; i--) {
         for (int j = 0; j < n; j++) {
-          if (i - 1 >= 0 && (*m)[i][j] != 0 && (*m)[i][j] == (*m)[i-1][j]) {
+        /*
+         * ^ [ ] [ ] [ ] [ ]
+         * | [ ] [ ] [ ] [ ]
+         * | [ ] [ ] [ ] [ ]
+         * | [ ] [ ] [ ] [ ]
+         *    ^   ^   ... ...
+         *    |   depois aqui
+         *    Começa aqui
+         *
+         */
+          if (i - 1 >= 0 && (*m)[i][j] != 0 && (*m)[i][j] == (*m)[i-1][j]) { // Checa se o índice checado é válido e se os blocos são iguais
             (*m)[i][j] *= 2;
             (*m)[i - 1][j] = 0;
             
-            if ((*m)[i][j] == BLOCOVOLTAR) {
+            if ((*m)[i][j] == BLOCOVOLTAR) { // Checa se foi formado um bloco que dá +1 "Voltar Jogada"
               (*nVoltar) += 1;
             }
           }
         }
       }
       break;
-    case 'D':
+    case 'D': // Direita
       for (int i = 0; i < n; i++) {
         for (int j = n-1; 0 <= j; j--) {
-          if (j - 1 >= 0 && (*m)[i][j] != 0 && (*m)[i][j] == (*m)[i][j-1]) {
+        /*
+         * <--------------
+         * [ ] [ ] [ ] [ ] <- Começa aqui
+         * [ ] [ ] [ ] [ ] <- depois aqui
+         * [ ] [ ] [ ] [ ] ...
+         * [ ] [ ] [ ] [ ] ...
+         *
+         */
+          if (j - 1 >= 0 && (*m)[i][j] != 0 && (*m)[i][j] == (*m)[i][j-1]) { // Checa se o índice checado é válido e se os blocos são iguais
             (*m)[i][j] *= 2;
             (*m)[i][j - 1] = 0;
             
-            if ((*m)[i][j] == BLOCOVOLTAR) {
+            if ((*m)[i][j] == BLOCOVOLTAR) { // Checa se foi formado um bloco que dá +1 "Voltar Jogada"
               (*nVoltar) += 1;
             }
           }
