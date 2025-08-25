@@ -19,8 +19,8 @@
 /**************************** CONSTANTES ***************************/
 
 // Constantes minhas
-#define BLOCOVOLTAR 8
-#define BLOCOTROCAR 4
+#define BLOCOVOLTAR 256
+#define BLOCOTROCAR 512
 
 // cores e formato de texto
 #define ANSI_RESET            "\x1b[0m"  // desativa os efeitos anteriores
@@ -92,13 +92,14 @@ int algarismos(int n);
 
 // Funções do jogo
 void imprimirMatriz(int** matriz, int n, int pontuacao, int nTrocar, int nVoltar);
-void gerarBloco(int*** matriz, int n);
+int gerarBloco(int*** matriz, int n);
 void moverMatriz(int*** m, int n, char c);
 void somarBlocos(int*** m, int n, char c, int* pontuacao, int* nTrocar, int* nVoltar);
 void copiarMatriz(int*** destino, int*** origem, int n);
 void voltarJogada(int*** m, int ***mA);
 int algarismosMaiorNumero(int*** m, int n);
 int compararMatriz(int** m, int** mA, int n);
+int movimentoAlteraTabuleiro(int** m, int n);
 
 // Funções de alocação
 void alocarMatriz(int*** matriz, int n);
@@ -147,7 +148,6 @@ int main() {
       int nVoltar = 0;
       int nTrocar = 0;
       int gerar = 1;
-      int gerou = 5;
       int pontuacao = 0;
       
       // Semente aleatória
@@ -222,10 +222,10 @@ int main() {
          *  - Não pode voltar movimento
          *  - Não pode trocar duas peças
          */
-        if (!movimentoAlteraOTabuleiro();) {
+        if (!movimentoAlteraTabuleiro(matriz, tamanhoTabuleiro)) {
           if (nVoltar > 0) {
             printf("\tVocê ainda pode voltar um movimento!");
-          else if (nTrocar > 0) {
+          } else if (nTrocar > 0) {
             printf("\tVocê ainda pode trocar duas peças!");
           } else {
             printf("\tNão há mais movimentos possíveis. Você perdeu.\n");
@@ -381,6 +381,32 @@ int main() {
 }
 
 /************************* FUNÇÕES *************************/
+
+// Simula movimentos nas três direções e checa se isso altera o tabuleiro
+int movimentoAlteraTabuleiro(int** m, int n) {
+  int **mAux;
+  
+  alocarMatriz(&mAux, n);
+  
+  for (int i = 0; i < 4; i++) {
+    copiarMatriz(&mAux, &m, n);
+
+    switch (i) {
+      case 0: moverMatriz(&mAux, n, 'W'); break;
+      case 1: moverMatriz(&mAux, n, 'A'); break;
+      case 2: moverMatriz(&mAux, n, 'S'); break;
+      case 3: moverMatriz(&mAux, n, 'D'); break;
+    }
+    
+    if (!compararMatriz(mAux, m, n)) {
+      liberarMatriz(&mAux, n);
+      return 1; // Movimento altera o tabuleiro
+    }
+  }
+  
+  liberarMatriz(&mAux, n);
+  return 0; // Movimentos não alteram o tabuleiro
+}
 
 // Compara os elementos de uma matriz com os de outra
 int compararMatriz(int** m, int** mA, int n) {
