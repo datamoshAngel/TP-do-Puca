@@ -319,10 +319,9 @@ int main() {
         margem(5); printf("- As peças deslizam o mais longe possível até colidirem.\n\n");
         margem(5); printf("- Duas peças iguais que se colidirem irão se fundir em uma peça com o valor total das duas peças.\n\n\n");
         margem(4); printf("Esse é o 2048.");
-        
         quebrar(5);
         centralizado(BOLD("(R)") " Voltar ao menu");
-        
+        quebrar(7);
         
         // Inserir comando
         char comando2[3];
@@ -364,6 +363,7 @@ int main() {
         if (strcmp(comando2, "S\n") == 0) {
           system("clear");
           programa = 0; // Encerra o jogo
+          sair = 0;
         }
         else if (strcmp(comando2, "N\n") == 0) {
           sair = 0; // Finaliza o while e retorna para o menu
@@ -384,7 +384,7 @@ int main() {
 
 // Simula movimentos nas três direções e checa se isso altera o tabuleiro
 int movimentoAlteraTabuleiro(int** m, int n) {
-  int **mAux;
+  int **mAux, lixo;
   
   alocarMatriz(&mAux, n);
   
@@ -392,10 +392,10 @@ int movimentoAlteraTabuleiro(int** m, int n) {
     copiarMatriz(&mAux, &m, n);
 
     switch (i) {
-      case 0: moverMatriz(&mAux, n, 'W'); break;
-      case 1: moverMatriz(&mAux, n, 'A'); break;
-      case 2: moverMatriz(&mAux, n, 'S'); break;
-      case 3: moverMatriz(&mAux, n, 'D'); break;
+      case 0: moverMatriz(&mAux, n, 'W'); somarBlocos(&mAux, n, 'W', &lixo, &lixo, &lixo); break;
+      case 1: moverMatriz(&mAux, n, 'A'); somarBlocos(&mAux, n, 'A', &lixo, &lixo, &lixo); break;
+      case 2: moverMatriz(&mAux, n, 'S'); somarBlocos(&mAux, n, 'S', &lixo, &lixo, &lixo); break;
+      case 3: moverMatriz(&mAux, n, 'D'); somarBlocos(&mAux, n, 'D', &lixo, &lixo, &lixo); break;
     }
     
     if (!compararMatriz(mAux, m, n)) {
