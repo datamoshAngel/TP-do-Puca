@@ -92,7 +92,7 @@ int algarismos(int n);
 
 // Funções do jogo
 void imprimirMatriz(int** matriz, int n, int pontuacao, int nTrocar, int nVoltar);
-int gerarBloco(int*** matriz, int n);
+void gerarBloco(int*** matriz, int n);
 void moverMatriz(int*** m, int n, char c);
 void somarBlocos(int*** m, int n, char c, int* pontuacao, int* nTrocar, int* nVoltar);
 void copiarMatriz(int*** destino, int*** origem, int n);
@@ -201,7 +201,7 @@ int main() {
         if (!gerar) {
           gerar = 1;
         } else {
-          gerou = gerarBloco(&matriz, tamanhoTabuleiro);
+          gerarBloco(&matriz, tamanhoTabuleiro);
         }
         
         // Imprimir tabuleiro
@@ -216,14 +216,20 @@ int main() {
         centralizado(BOLD("<V>") " Volta para o menu inicial");
         quebrar(3);
         
-        // Conferir se há movimentos válidos
-        if (!gerou) {
+        // Conferir se é game over
+        /*  Requesitos:
+         *  - Qualquer movimento não altere o tabuleiro
+         *  - Não pode voltar movimento
+         *  - Não pode trocar duas peças
+         */
+        if (!movimentoAlteraOTabuleiro();) {
           if (nVoltar > 0) {
-            printf("\tVocê ainda pode voltar um movimento! Aperte enter para continuar. ");
-            limparBuffer();
+            printf("\tVocê ainda pode voltar um movimento!");
+          else if (nTrocar > 0) {
+            printf("\tVocê ainda pode trocar duas peças!");
           } else {
             printf("\tNão há mais movimentos possíveis. Você perdeu.\n");
-            printf("\tAperte enter para continuar");
+            printf("\tAperte enter para continuar. ");
             limparBuffer();
             jogo = 0;
             break;
@@ -990,7 +996,7 @@ void imprimirTitulo() {
   centralizado(BG_WHITE("          ") "  " BG_WHITE("  ") "    " BG_WHITE("    ") "  " BG_WHITE("          ") "  " BG_WHITE("          "));
   centralizado(BG_WHITE("  ") "          " BG_WHITE("  ") "    " BG_WHITE("    ") "        " BG_WHITE("    ") "  " BG_WHITE("  ") "    " BG_WHITE("    "));
   centralizado(BG_WHITE("          ") "  " BG_WHITE("          ") "        " BG_WHITE("    ") "  " BG_WHITE("          "));
-} // A fonte usada se chama Neo Jazz e foi feita por mim em 2023. :)
+}
 
 /***********************************************************/
 
