@@ -87,6 +87,7 @@ void margem(int n);
 void centralizado(char *texto);
 void letraMaiuscula(char* comando);
 void invalido();
+int algarismos(int n);
 
 // Funções do jogo
 void imprimirMatriz(int** matriz, int n);
@@ -184,9 +185,6 @@ int main() {
       /* ----- JOGO ----- */
       while (jogo) {
         system("clear");
-        
-        //DEbug
-        matriz[0][0] = 0;
         
         // Imprimir cabeçário
         quebrar(2);
@@ -370,7 +368,13 @@ void espacosBrancos(int n) {
 
 /***********************************************************/
 
-
+// Retorna o número de algarismos de n
+int algarismos(int n) {
+  if (n == 0){
+    return 1; // Não é possível calcular o log de 0
+  }
+  return (int)log10(n) + 1; // Fórmula que dá o número de algarismos de n
+}
 
 /***********************************************************/
 
@@ -403,28 +407,108 @@ void imprimirMatriz(int **matriz, int n) {
     for (int j = 0; j < n; j++) {
       printf(BG_WHITE("  "));
       espacosPretos(3);
+      
+      int diferenca = x - algarismos(matriz[i][j]); // Quantos algarismos x tem a mais que devem ser compensados em espaços pretos
+      int nEspacosE = (int)floor(diferenca / 2.0); // metade irá pra um lado
+      int nEspacosD = (int)ceil(diferenca / 2.0); // a outra metade pro outro lado
+      
+      // Formatação para cada cor específica
       switch (matriz[i][j]) {
-        case 0: espacosPretos(x+1); break;
-        case 2: printf(BG_BLACK("\x1b[32m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]);      printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
-        case 4: printf(BG_BLACK("\x1b[92m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]);      printf(BLACK(BG_BLACK("%*d")), x /2+1, 0); break;
-        case 8: printf("\x1b[42;30m%*d\x1b[0m", (int)ceil(x/2.0), matriz[i][j]);             printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
-        case 16: printf(BG_BLACK("\x1b[33m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]);     printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
-        case 32: printf(BG_BLACK("\x1b[93m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]);     printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
-        case 64: printf("\x1b[43;30m%*d\x1b[0m", (int)ceil(x/2.0), matriz[i][j]);            printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
-        case 128: printf(BG_BLACK("\x1b[31m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]);    printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
-        case 256: printf(BG_BLACK("\x1b[91m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]);    printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
-        case 512: printf("\x1b[41;37m%*d\x1b[0m", (int)ceil(x/2.0), matriz[i][j]);           printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
-        case 1024: printf(BG_BLACK("\x1b[35m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]);   printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
-        case 2048: printf(BG_BLACK("\x1b[95m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]);   printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
-        case 4096: printf("\x1b[45;37m%*d\x1b[0m", (int)ceil(x/2.0), matriz[i][j]);          printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
-        case 8192: printf(BG_BLACK("\x1b[36m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]);   printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
-        case 16384: printf(BG_BLACK("\x1b[96m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]);  printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
-        case 32768: printf("\x1b[46;30m%*d\x1b[0m", (int)ceil(x/2.0), matriz[i][j]);         printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
-        case 65536: printf(BG_BLACK("\x1b[34m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]);  printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
-        case 131072: printf(BG_BLACK("\x1b[94m%*d\x1b[0m"), (int)ceil(x/2.0), matriz[i][j]); printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
-        default: printf("\x1b[46;30m%*d\x1b[0m", (int)ceil(x/2.0), matriz[i][j]);            printf(BLACK(BG_BLACK("%*d")), x/2+1, 0); break;
+        case 0:
+          espacosPretos(x); // imprimirá x vezes, que é a quantidade de algarismos do maior número da tabela
+          break;
+        case 2:
+            espacosPretos(nEspacosE); 
+            printf(BG_BLACK("\x1b[32m%d\x1b[0m"), matriz[i][j]);
+            espacosPretos(nEspacosD);
+            break;
+        case 4:
+            espacosPretos(nEspacosE);
+            printf(BG_BLACK("\x1b[92m%d\x1b[0m"), matriz[i][j]);
+            espacosPretos(nEspacosD);
+            break;
+        case 8:
+            espacosPretos(nEspacosE);
+            printf("\x1b[42;30m%d\x1b[0m", matriz[i][j]);
+            espacosPretos(nEspacosD);
+            break;
+        case 16:
+            espacosPretos(nEspacosE);
+            printf(BG_BLACK("\x1b[33m%d\x1b[0m"), matriz[i][j]);
+            espacosPretos(nEspacosD);
+            break;
+        case 32:
+            espacosPretos(nEspacosE);
+            printf(BG_BLACK("\x1b[93m%d\x1b[0m"), matriz[i][j]);
+            espacosPretos(nEspacosD);
+            break;
+        case 64:
+            espacosPretos(nEspacosE);
+            printf("\x1b[43;30m%d\x1b[0m", matriz[i][j]);
+            espacosPretos(nEspacosD);
+            break;
+        case 128:
+            espacosPretos(nEspacosE);
+            printf(BG_BLACK("\x1b[31m%d\x1b[0m"), matriz[i][j]);
+            espacosPretos(nEspacosD);
+            break;
+        case 256:
+            espacosPretos(nEspacosE);
+            printf(BG_BLACK("\x1b[91m%d\x1b[0m"), matriz[i][j]);
+            espacosPretos(nEspacosD);
+            break;
+        case 512:
+            espacosPretos(nEspacosE);
+            printf("\x1b[41;37m%d\x1b[0m", matriz[i][j]);
+            espacosPretos(nEspacosD);
+            break;
+        case 1024:
+            espacosPretos(nEspacosE);
+            printf(BG_BLACK("\x1b[35m%d\x1b[0m"), matriz[i][j]);
+            espacosPretos(nEspacosD);
+            break;
+        case 2048:
+            espacosPretos(nEspacosE);
+            printf(BG_BLACK("\x1b[95m%d\x1b[0m"), matriz[i][j]);
+            espacosPretos(nEspacosD);
+            break;
+        case 4096:
+            espacosPretos(nEspacosE);
+            printf("\x1b[45;37m%d\x1b[0m", matriz[i][j]);
+            espacosPretos(nEspacosD);
+            break;
+        case 8192:
+            espacosPretos(nEspacosE);
+            printf(BG_BLACK("\x1b[36m%d\x1b[0m"), matriz[i][j]);
+            espacosPretos(nEspacosD);
+            break;
+        case 16384:
+            espacosPretos(nEspacosE);
+            printf(BG_BLACK("\x1b[96m%d\x1b[0m"), matriz[i][j]);
+            espacosPretos(nEspacosD);
+            break;
+        case 32768:
+            espacosPretos(nEspacosE);
+            printf("\x1b[46;30m%d\x1b[0m", matriz[i][j]);
+            espacosPretos(nEspacosD);
+            break;
+        case 65536:
+            espacosPretos(nEspacosE);
+            printf(BG_BLACK("\x1b[34m%d\x1b[0m"), matriz[i][j]);
+            espacosPretos(nEspacosD);
+            break;
+        case 131072:
+            espacosPretos(nEspacosE);
+            printf(BG_BLACK("\x1b[94m%d\x1b[0m"), matriz[i][j]);
+            espacosPretos(nEspacosD);
+            break;
+        default:
+            espacosPretos(nEspacosE);
+            printf("\x1b[46;30m%d\x1b[0m", matriz[i][j]);
+            espacosPretos(nEspacosD);
+            break;
       }
-      espacosPretos(2);
+      espacosPretos(3);
     }
     printf(BG_WHITE("  ") "\n");
     espacos(k);
@@ -713,10 +797,7 @@ int algarismosMaiorNumero(int*** m, int n) {
       if ((*m)[i][j] > maior)
         maior = (*m)[i][j];
   
-  if (maior == 0)
-    return 1; // Não é possível calcular log 0
-  
-  return (int)log10(maior) + 1; // equação que retorna o número de algarismos de um número
+  return algarismos(maior);
 }
 
 /***********************************************************/
