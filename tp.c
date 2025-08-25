@@ -19,7 +19,8 @@
 /**************************** CONSTANTES ***************************/
 
 // Constantes minhas
-#define BLOCOVOLTAR 4
+#define BLOCOVOLTAR 8
+#define BLOCOTROCAR 4
 
 // cores e formato de texto
 #define ANSI_RESET            "\x1b[0m"  // desativa os efeitos anteriores
@@ -90,13 +91,19 @@ void invalido();
 int algarismos(int n);
 
 // Funções do jogo
-void imprimirMatriz(int** matriz, int n);
-void gerarBloco(int*** matriz, int n);
+void imprimirMatriz(int** matriz, int n, int pontuacao, int nTrocar, int nVoltar);
+int gerarBloco(int*** matriz, int n);
 void moverMatriz(int*** m, int n, char c);
-void somarBlocos(int*** m, int n, char c, int* nVoltar);
+void somarBlocos(int*** m, int n, char c, int* pontuacao, int* nTrocar, int* nVoltar);
 void copiarMatriz(int*** destino, int*** origem, int n);
 void voltarJogada(int*** m, int ***mA);
 int algarismosMaiorNumero(int*** m, int n);
+int compararMatriz(int** m, int** mA, int n);
+
+// Funções de alocação
+void alocarMatriz(int*** matriz, int n);
+void liberarMatriz(int*** matriz, int n);
+void zerarMatriz(int** matriz, int n);
 
 /******************************* MAIN *******************************/
 
@@ -138,7 +145,12 @@ int main() {
       int jogo = 1;
       int tamanhoTabuleiro;
       int nVoltar = 0;
+      int nTrocar = 0;
       int gerar = 1;
+      int gerou = 5;
+      int pontuacao = 0;
+      
+      // Semente aleatória
       srand(time(NULL));
       
       do{
@@ -154,7 +166,7 @@ int main() {
         centralizado(BOLD("(4)") " Jogo 4x4");
         centralizado(BOLD("(5)") " Jogo 5x5");
         centralizado(BOLD("(6)") " Jogo 6x6");
-        quebrar(18);
+        quebrar(19);
         
         // Inserir comando
         printf("\t" BOLD("Comando: "));
@@ -167,20 +179,15 @@ int main() {
         
       } while (tamanhoTabuleiro < 4 || 6 < tamanhoTabuleiro);
       
-      // Alocar a matriz tabuleiro o tabuleiro anterior
-      matriz = malloc(tamanhoTabuleiro * sizeof(int*));
-      matrizAnterior = malloc(tamanhoTabuleiro * sizeof(int*));
-      for (int i = 0; i < tamanhoTabuleiro; i++) {
-        matriz[i] = malloc(tamanhoTabuleiro * sizeof(int));
-        matrizAnterior[i] = malloc(tamanhoTabuleiro * sizeof(int));
-      }
+      // Alocar a matriz tabuleiro e o tabuleiro anterior
+      alocarMatriz(&matriz, tamanhoTabuleiro);
+      alocarMatriz(&matrizAnterior, tamanhoTabuleiro);
       
       // Zerar as matrizes
-      for (int i = 0; i < tamanhoTabuleiro; i++)
-        for (int j = 0; j < tamanhoTabuleiro; j++) {
-          matriz[i][j] = 0;
-          matrizAnterior[i][j] = 0;
-        }
+      zerarMatriz(matriz, tamanhoTabuleiro);
+      zerarMatriz(matrizAnterior, tamanhoTabuleiro);
+      
+      limparBuffer();
       
       /* ----- JOGO ----- */
       while (jogo) {
@@ -194,12 +201,12 @@ int main() {
         if (!gerar) {
           gerar = 1;
         } else {
-          gerarBloco(&matriz, tamanhoTabuleiro);
+          gerou = gerarBloco(&matriz, tamanhoTabuleiro);
         }
         
         // Imprimir tabuleiro
         quebrar(13-2*tamanhoTabuleiro);
-        imprimirMatriz(matriz, tamanhoTabuleiro);
+        imprimirMatriz(matriz, tamanhoTabuleiro, pontuacao, nTrocar, nVoltar);
         quebrar(14-2*tamanhoTabuleiro);
         
         // Imprimir opções
@@ -207,16 +214,28 @@ int main() {
         centralizado(BOLD("<U>") " Dezfazer último movimento");
         centralizado(BOLD("<T> <Posição 1> <Posição 2>") " Troca a peça 1 pela peça 2");
         centralizado(BOLD("<V>") " Volta para o menu inicial");
+        quebrar(3);
         
-        // Imprimir informações
-        printf("Voltar: %d", nVoltar);
-        quebrar(2);
+        // Conferir se há movimentos válidos
+        if (!gerou) {
+          if (nVoltar > 0) {
+            printf("\tVocê ainda pode voltar um movimento! Aperte enter para continuar. ");
+            limparBuffer();
+          } else {
+            printf("\tNão há mais movimentos possíveis. Você perdeu.\n");
+            printf("\tAperte enter para continuar");
+            limparBuffer();
+            jogo = 0;
+            break;
+          }
+        }
         
         // Inserir comando
         char comando2[3];
         printf("\n\t" BOLD("Comando: "));
         fgets(comando2, 3, stdin);
         letraMaiuscula(comando2);
+
 
         if (strcmp(comando2, "W\n") == 0 || strcmp(comando2, "A\n") == 0 || strcmp(comando2, "S\n") == 0 || strcmp(comando2, "D\n") == 0) { // Move o tabuleiro 
           
@@ -225,13 +244,20 @@ int main() {
           
           // Move os blocos sem fazer "peças gulosas"
           moverMatriz(&matriz, tamanhoTabuleiro, comando2[0]);
-          somarBlocos(&matriz, tamanhoTabuleiro, comando2[0], &nVoltar);
+          somarBlocos(&matriz, tamanhoTabuleiro, comando2[0], &pontuacao, &nTrocar, &nVoltar);
           moverMatriz(&matriz, tamanhoTabuleiro, comando2[0]);
+          
+          if (compararMatriz(matriz, matrizAnterior, tamanhoTabuleiro)) { // Impede que movimentos nos quais peças não foram movidas gerem novos blocos
+            gerar = 0;
+          }
           
         } else if (strcmp(comando2, "U\n") == 0) { // Retorna o tabuleiro para o movimento anterior ******************************/
           if (nVoltar > 0) {
             voltarJogada(&matriz, &matrizAnterior);
             nVoltar--;
+          } else {
+            printf("\tVocê ainda não pode desfazer sua jogada! Forme um %d primeiro! Aperte enter para continuar...", BLOCOVOLTAR);
+            limparBuffer();
           }
           gerar = 0; // Faz com que o tabuleiro não seja alterado
         } else if (strcmp(comando2, "T\n") == 0) { // Troca 2 peças de lugar *****************************************************/
@@ -247,10 +273,8 @@ int main() {
       }
       
       // Liberar memória alocada
-      for (int i = 0; i < tamanhoTabuleiro; i++) {
-        free(matriz[i]); free(matrizAnterior[i]);
-      }
-      free(matriz); free(matrizAnterior);
+      liberarMatriz(&matriz, tamanhoTabuleiro);
+      liberarMatriz(&matrizAnterior, tamanhoTabuleiro);
     
     } else if (strcmp(comando, "J\n") == 0) { // Continuar jogo atual ********************************************************************/
     
@@ -352,6 +376,45 @@ int main() {
 
 /************************* FUNÇÕES *************************/
 
+// Compara os elementos de uma matriz com os de outra
+int compararMatriz(int** m, int** mA, int n) {
+  for (int i = 0; i < n; i++)
+    for (int j = 0; j < n; j++)
+      if (m[i][j] != mA[i][j])
+        return 0; // Não são iguais
+
+  return 1; // São iguais
+}
+
+/***********************************************************/
+
+// Aloca memória para uma matriz
+void alocarMatriz(int*** matriz, int n) {
+  (*matriz) = malloc(n * sizeof(int*));
+  for (int i = 0; i < n; i++)
+    (*matriz)[i] = malloc(n * sizeof(int)); 
+}
+
+/***********************************************************/
+
+// Libera a memória alocada
+void liberarMatriz(int*** matriz, int n) {
+  for (int i = 0; i < n; i++)
+    free((*matriz)[i]);
+  free((*matriz));
+}
+
+/***********************************************************/
+
+// Tranforma todos os elementos da matriz em zero
+void zerarMatriz(int** matriz, int n) {
+  for (int i = 0; i < n; i++)
+    for (int j = 0; j < n; j++)
+      matriz[i][j] = 0;
+}
+
+/***********************************************************/
+
 // Adiciona n espaços pretos
 void espacosPretos(int n) {
   for (int i = 0; i < n; i++)
@@ -379,7 +442,7 @@ int algarismos(int n) {
 /***********************************************************/
 
 // Imprime o tabuleiro do jogo
-void imprimirMatriz(int **matriz, int n) {
+void imprimirMatriz(int **matriz, int n, int pontuacao, int nTrocar, int nVoltar) {
   
   int x = algarismosMaiorNumero(&matriz, n); // quantidade de algarismos do maior número
   int larguraTab = 8*n + n*x + 2; // largura do tabuleiro
@@ -510,26 +573,45 @@ void imprimirMatriz(int **matriz, int n) {
       }
       espacosPretos(3);
     }
-    printf(BG_WHITE("  ") "\n");
-    espacos(k);
+    printf(BG_WHITE("  "));
+    if (i == 0) { // Caso seja a linha 2 do tabuleiro
+        printf(BOLD("    PONTUAÇÃO:") " %5d pontos", pontuacao);
+    } else if (i == n - 1) { // Caso seja a linha  4n-4 do tabuleiro
+        printf(BOLD("    TROCAR:") " Pode trocar duas peças %d vez", nTrocar);
+        if (nTrocar != 1) {
+          printf("es");
+        }
+    }
+    printf("\n");
     
     // Imprime a linha 4i + 4
+    espacos(k);
     for (int j = 0; j < n; j++) {
       printf(BG_WHITE("  "));
       espacosPretos(6 + x);
     }
     printf(BG_WHITE("  ") "\n");
     
+    
     // Imprime a última linha
     espacos(k);
     espacosBrancos(larguraTab);
+    if (i == n-1) {
+      printf(BOLD("    DESFAZER:") " Pode desfazer o movimento %d vez", nVoltar);
+      if (nVoltar != 1) {
+        printf("es");
+      }
+    }
   }
 }
 
 /***********************************************************/
 
 // Adiciona um bloco em uma casa vazia da matriz
-void gerarBloco(int*** matriz, int n) {
+int gerarBloco(int*** matriz, int n) {
+  int tentativas = 0;
+  int tentativasMax = n*n;
+
   int x; // índice aleatório da coluna
   int y; // índice aleatório da linha
   int r; // número aleatório entre 1 e 100
@@ -539,16 +621,21 @@ void gerarBloco(int*** matriz, int n) {
     y = rand()%n;
     r = (rand()%100) + 1;
     
-    if ((*matriz)[x][y] == 0) { // Se o bloco estiver vazio
+    if ((*matriz)[x][y] == 0) { // Bloco está vazio
       if (r <= (5*n - 10)) { //"r" é menor que 5n-10. Efetivamente dá 10% de chance para n = 4, 15% para n = 5 e 20% para n = 6
         (*matriz)[x][y] = 4;
-        break;
       } else {
         (*matriz)[x][y] = 2;
-        break;
       }
+      
+      return 1; // Sucesso em gerar bloco
     }
-  } while ((*matriz)[x][y] != 0); // Enquanto o bloco sorteado estiver preenchido
+    
+    tentativas++;
+    
+  } while ((*matriz)[x][y] != 0 && tentativas < tentativasMax); // Enquanto o bloco sorteado estiver preenchido e não tiver excedido o limite de tentativas
+  
+  return 0; // Tentativas excederam o limite, falhou em gerar bloco.
 }
 
 /***********************************************************/
@@ -669,7 +756,7 @@ void moverMatriz(int*** m, int n, char c){
 
 /***********************************************************/
 
-void somarBlocos(int*** m, int n, char c, int* nVoltar) {
+void somarBlocos(int*** m, int n, char c, int* pontuacao, int* nTrocar, int* nVoltar) {
   switch (c) {
     case 'W': // Cima
       for (int i = 0; i < n; i++) {
@@ -689,8 +776,12 @@ void somarBlocos(int*** m, int n, char c, int* nVoltar) {
             (*m)[i][j] *= 2;
             (*m)[i + 1][j] = 0;
             
+            (*pontuacao) += (*m)[i][j]; // Soma a pontuação
+            
             if ((*m)[i][j] == BLOCOVOLTAR) { // Checa se foi formado um bloco que dá +1 "Voltar Jogada"
               (*nVoltar) += 1;
+            } else if ((*m)[i][j] == BLOCOTROCAR) {  // Checa se foi formado um bloco que dá +1 "Voltar Jogada"
+              (*nTrocar) += 1;
             }
           }
         }
@@ -707,12 +798,16 @@ void somarBlocos(int*** m, int n, char c, int* nVoltar) {
          *            ... [ ] [ ] [ ] [ ]
          *
          */
-          if (j + 1 < n && (*m)[i][j] != 0 && (*m)[i][j] == (*m)[i][j+1]) { // Checa se o índice checado é válido e se os blocos são iguais
-            (*m)[i][j] *= 2;
+        if (j + 1 < n && (*m)[i][j] != 0 && (*m)[i][j] == (*m)[i][j+1]) { // Checa se o índice checado é válido e se os blocos são iguais
+          (*m)[i][j] *= 2;
             (*m)[i][j + 1] = 0;
-
+            
+            (*pontuacao) += (*m)[i][j]; // Soma a pontuação
+            
             if ((*m)[i][j] == BLOCOVOLTAR) { // Checa se foi formado um bloco que dá +1 "Voltar Jogada"
               (*nVoltar) += 1;
+            } else if ((*m)[i][j] == BLOCOTROCAR) {  // Checa se foi formado um bloco que dá +1 "Voltar Jogada"
+              (*nTrocar) += 1;
             }
           }
         }
@@ -735,8 +830,12 @@ void somarBlocos(int*** m, int n, char c, int* nVoltar) {
             (*m)[i][j] *= 2;
             (*m)[i - 1][j] = 0;
             
+            (*pontuacao) += (*m)[i][j]; // Soma a pontuação
+            
             if ((*m)[i][j] == BLOCOVOLTAR) { // Checa se foi formado um bloco que dá +1 "Voltar Jogada"
               (*nVoltar) += 1;
+            } else if ((*m)[i][j] == BLOCOTROCAR) {  // Checa se foi formado um bloco que dá +1 "Voltar Jogada"
+              (*nTrocar) += 1;
             }
           }
         }
@@ -757,8 +856,12 @@ void somarBlocos(int*** m, int n, char c, int* nVoltar) {
             (*m)[i][j] *= 2;
             (*m)[i][j - 1] = 0;
             
+            (*pontuacao) += (*m)[i][j]; // Soma a pontuação
+            
             if ((*m)[i][j] == BLOCOVOLTAR) { // Checa se foi formado um bloco que dá +1 "Voltar Jogada"
               (*nVoltar) += 1;
+            } else if ((*m)[i][j] == BLOCOTROCAR) {  // Checa se foi formado um bloco que dá +1 "Voltar Jogada"
+              (*nTrocar) += 1;
             }
           }
         }
