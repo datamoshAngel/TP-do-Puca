@@ -89,20 +89,22 @@ void centralizado(char *texto);
 void letraMaiuscula(char* comando);
 void invalido();
 int algarismos(int n);
+void validarComando(char* comando);
 
 // Funções do jogo
 void imprimirMatriz(int** matriz, int n, int pontuacao, int nTrocar, int nVoltar);
 int gerarBloco(int*** matriz, int n);
 void moverMatriz(int*** m, int n, char c);
-void somarBlocos(int*** m, int n, char c, int* pontuacao, int* nTrocar, int* nVoltar);
+void somarBlocos(int*** m, int n, char c, int* pontuacao, int* nTrocar, int* nVoltar, int* n2048);
 void copiarMatriz(int*** destino, int*** origem, int n);
 void voltarJogada(int*** m, int ***mA);
 int algarismosMaiorNumero(int*** m, int n);
 int compararMatriz(int** m, int** mA, int n);
 int movimentoAlteraTabuleiro(int** m, int n);
-void trocarPecas(int*** matriz, char posicao[1000]);
+int trocarPecas(int*** matriz, int n, char comando[8]);
 int jogadaDeuTroca(int** m, int** mA, int n);
 int pontuacaoAtual(int** m, int n);
+int formou2048(int** m, int** mA, int n);
 
 // Funções de alocação
 void alocarMatriz(int*** matriz, int n);
@@ -149,12 +151,12 @@ int main() {
       int jogo = 1;
       int tamanhoTabuleiro;
       int nVoltar = 10;
-      int nTrocar = 0;
+      int nTrocar = 10;
       int gerar = 1;
       int pontuacao = 0;
       int primeiraJogada = 1;
-      int ganhou = 0;
       int primeiro2048 = 1;
+      int n2048 = -1;
       
       // Semente aleatória
       srand(time(NULL));
@@ -213,27 +215,52 @@ int main() {
           }
           gerarBloco(&matriz, tamanhoTabuleiro);
         }
-        matriz[0][0] = 1073741824;
+        matriz[0][0] = 1024;
         // Imprimir tabuleiro
-        quebrar(13-2*tamanhoTabuleiro);
+        quebrar(13 - 2*tamanhoTabuleiro);
         imprimirMatriz(matriz, tamanhoTabuleiro, pontuacao, nTrocar, nVoltar);
-        quebrar(14-2*tamanhoTabuleiro);
+        quebrar(14 - 2*tamanhoTabuleiro);
         
         // Imprimir opções
         centralizado(BOLD("<W, A, S, D>") " Mover");
         centralizado(BOLD("<U>") " Dezfazer último movimento");
         centralizado(BOLD("<T> <Posição 1> <Posição 2>") " Troca a peça 1 pela peça 2");
-        centralizado(BOLD("<V>") " Volta para o menu inicial");
-        quebrar(3);
+        centralizado(BOLD("<VOLTAR>") " Volta para o menu inicial");
+        
+        // Imprimir após o fim o jogo
+        if (n2048 > 0) {
+          printf(BOLD("\t""2048"" Formados: %d\n"), n2048); 
+        } else {
+          quebrar(1);
+        }
         
         // Confere se as condições de vitória foram atendidas        
-        if (formou2048(matriz, matrizAnterior, n)) && (primeiro2048) {
-          primeiro2048 = 0;
+        if (formou2048(matriz, matrizAnterior, tamanhoTabuleiro) && (primeiro2048)) {
+          primeiro2048 = 0; // Evita que a mensagem apareça novamente
           
-          printf("\nParabéns! Você venceu jogo! Deseja continuar jogando?" BOLD("\t(S)") "Sim" BOLD("\t(N)") "Não";
+          printf("\tParabéns! Você venceu jogo! Deseja continuar jogando?" BOLD("\t(S)") " Sim    " BOLD("(N)") " Não");
           
           // Inserir comando
+          char confirmacao[3];
+          printf("\n\t" BOLD("Comando: "));
+          fgets(confirmacao, 3, stdin);
+          letraMaiuscula(confirmacao);
           
+          // Conferir comando
+          if (strcmp(confirmacao, "S\n") == 0) { // Ficar
+            n2048 = 1;
+            continue;
+          } else if (strcmp(confirmacao, "N\n") == 0) { // Sair
+            system("clear");
+            jogo = 0;
+            break;
+          } else { // Comando inválido
+            limparBuffer();
+            invalido();
+            gerar = 0; // Não alterar o tabuleiro
+            primeiro2048 = 1; // Para exibir a mensagem novamente
+            continue;
+          }
         }
         
         // Conferir se é game over
@@ -257,9 +284,9 @@ int main() {
         }
         
         // Inserir comando
-        char comando2[3];
+        char comando2[8]; // V + O + L + T + A + R + \n + \0 --> 8, comando máximo válido
         printf("\n\t" BOLD("Comando: "));
-        fgets(comando2, 3, stdin);
+        fgets(comando2, 8, stdin);
         letraMaiuscula(comando2);
 
 
@@ -270,7 +297,7 @@ int main() {
           
           // Move os blocos sem fazer "peças gulosas"
           moverMatriz(&matriz, tamanhoTabuleiro, comando2[0]);
-          somarBlocos(&matriz, tamanhoTabuleiro, comando2[0], &pontuacao, &nTrocar, &nVoltar);
+          somarBlocos(&matriz, tamanhoTabuleiro, comando2[0], &pontuacao, &nTrocar, &nVoltar, &n2048);
           moverMatriz(&matriz, tamanhoTabuleiro, comando2[0]);
           
           if (compararMatriz(matriz, matrizAnterior, tamanhoTabuleiro)) { // Impede que movimentos nos quais peças não foram movidas gerem novos blocos
@@ -279,8 +306,12 @@ int main() {
           
         } else if (strcmp(comando2, "U\n") == 0) { // Retorna o tabuleiro para o movimento anterior ******************************/
           if (nVoltar > 0) {
+            // Ajustar números
             if (jogadaDeuTroca(matriz, matrizAnterior, tamanhoTabuleiro)) { // Confere se o movimento desfeito concedeu +1 "Trocar"
               nTrocar--;
+            }
+            if (formou2048(matriz, matrizAnterior, tamanhoTabuleiro)) {
+              n2048--;
             }
             
             // Fazer função
@@ -294,23 +325,33 @@ int main() {
             limparBuffer();
           }
           gerar = 0; // Faz com que o tabuleiro não seja alterado
-        } else if (comando2[0] == 'T' && comando2[1] == '\n') { // Troca 2 peças de lugar *****************************************************/
-          if (nTrocar > 0) {
-            // Digitar comandos
-            char posicao[1000];
-            fgets(posicao, 1000, stdin);
+        } else if (comando2[0] == 'T' && comando2[1] == ' ') { // Troca 2 peças de lugar *****************************************************/
+          if (nTrocar > 0) {      
             
-            // Fazer função
-            //trocarPecas(&matriz, posicao);
-            nTrocar--;
+            int retorno = trocarPecas(&matriz, tamanhoTabuleiro, comando2); // Executa a função e retorna o resultado
+            
+            // Resultados
+            if (retorno == 0) { // Comando inválido
+              limparBuffer();
+              invalido();
+            } else if (retorno == 1) { // Casa vazia
+              limparBuffer();
+              printf("\tNão é possível trocar casas com peças vazias. Aperte enter para continuar. ");
+            } else if (retorno == 2) { // Tentou trocar com a mesma casa
+              limparBuffer();
+              printf("\tNão é possível trocar a peça para a mesma casa. Aperte enter para continuar. ");
+            } else if (retorno == 3) { // Troca bem sucedida
+              nTrocar--;
+            }
           } else {
-            printf("\tVocê ainda não pode trocar duas peças! Forme um %d primeiro! Aperte enter para continuar...", BLOCOTROCAR);
+            printf("\tVocê ainda não pode trocar duas peças! Forme um %d primeiro! Aperte enter para continuar... ", BLOCOTROCAR);
             limparBuffer();
           }
           gerar = 0; // Faz com que o tabuleiro não seja alterado
-        } else if (strcmp(comando2, "V\n") == 0) { // Voltar para o menu *********************************************************/
+        } else if (strcmp(comando2, "VOLTAR\n") == 0) { // Voltar para o menu ****************************************************/
             system("clear");
             jogo = 0;
+            break;
         } else { // Comando inválido *********************************************************************************************/
           limparBuffer();
           invalido();
@@ -422,6 +463,25 @@ int main() {
 
 /************************* FUNÇÕES *************************/
 
+// Checa se foi formado um bloco 2048
+int formou2048(int** m, int** mA, int n) {
+  int tem = 0, tinha = 0;
+  
+  for (int i = 0; i < n; i++)
+    for (int j = 0; j < n; j++) {
+      if (m[i][j] == 2048)
+        tem += 1; // O tabuleiro tem +1 peça 2048
+      if (mA[i][j] == 2048)
+        tinha += 1; // O tabuleiro tinha +1 peça 2048
+    }
+
+  if (tem == tinha)
+    return 0; // Não foi formado um bloco 2048
+  return 1; // Foi formado
+}
+
+/***********************************************************/
+
 // Retorna a pontuação do estado do tabuleiro recebido
 int pontuacaoAtual(int **m, int n){
   int pontos = 0;
@@ -454,11 +514,65 @@ int jogadaDeuTroca(int** m, int** mA, int n) {
 }
 
 /***********************************************************/
-/*
+
 // Troca duas peças de posição
-void trocarPecas(int*** matriz, int n, char posicao[1000]){
+int trocarPecas(int*** matriz, int n, char posicao[8]){
+  int a = 0, b = 0, x = 0, y = 0, k = 2;
   
-} */
+  // Primeira linha
+  for (int i = k; i < 8; i++) // salta o T e o espaço da string posicao[8]
+    if (posicao[i] != ' ')
+      a = posicao[i]; // primeiro caractere válido
+  
+  if (65 <= a && a <= 64 + n ) // confere se "a" pegou uma letra que traduz um índice válido
+    a -= 65; // A -> 0    B -> 1    C -> 2    D -> 3
+  else
+    return 0; // posição inválida
+  
+  k++;
+  // Primeira coluna
+  for (int i = k; i < 8; i++) // i continua de onde parou em posicao[i]
+    if (posicao[i] != ' ')
+      b = posicao[i]; // segundo caractere válido
+  
+  if (48 <= b && b <= 47 + n ) // confere se "b" pegou um número que traduz um índice válido
+    b -= 48; // '1' -> 0    '2' -> 1    '3' -> 2    '4' -> 3
+  else
+    return 0;
+
+  k++;
+  // Segunda linha
+  for (int i = k; i < 8; i++)
+    if (posicao[i] != ' ')
+      x = posicao[i]; // terceiro caractere válido
+  
+  if (65 <= x && x <= 64 + n )
+    x -= 65;
+  else
+    return 0;
+  
+  k++;
+  // Segunda coluna
+  for (int i = k; i < 8; i++)
+    if (posicao[i] != ' ')
+      y = posicao[i]; // quarto caractere válido
+  
+  if (48 <= y && y <= 47 + n )
+    y -= 48;
+  else
+    return 0;
+  
+  if ((*matriz)[a][b] == 0 || (*matriz)[x][y] == 0)
+    return 1; // Há casas vazias
+  else if ((*matriz)[a][b] == (*matriz)[x][y])
+    return 2; // É a mesma casa
+  else {
+    int aux = (*matriz)[a][b];
+    (*matriz)[a][b] = (*matriz)[x][y];
+    (*matriz)[y][x] = aux;
+    return 3; // Sucesso na troca
+  }
+}
 
 /***********************************************************/
 
@@ -472,10 +586,10 @@ int movimentoAlteraTabuleiro(int** m, int n) {
     copiarMatriz(&mAux, &m, n);
 
     switch (i) {
-      case 0: moverMatriz(&mAux, n, 'W'); somarBlocos(&mAux, n, 'W', &lixo, &lixo, &lixo); break;
-      case 1: moverMatriz(&mAux, n, 'A'); somarBlocos(&mAux, n, 'A', &lixo, &lixo, &lixo); break;
-      case 2: moverMatriz(&mAux, n, 'S'); somarBlocos(&mAux, n, 'S', &lixo, &lixo, &lixo); break;
-      case 3: moverMatriz(&mAux, n, 'D'); somarBlocos(&mAux, n, 'D', &lixo, &lixo, &lixo); break;
+      case 0: moverMatriz(&mAux, n, 'W'); somarBlocos(&mAux, n, 'W', &lixo, &lixo, &lixo, &lixo); break;
+      case 1: moverMatriz(&mAux, n, 'A'); somarBlocos(&mAux, n, 'A', &lixo, &lixo, &lixo, &lixo); break;
+      case 2: moverMatriz(&mAux, n, 'S'); somarBlocos(&mAux, n, 'S', &lixo, &lixo, &lixo, &lixo); break;
+      case 3: moverMatriz(&mAux, n, 'D'); somarBlocos(&mAux, n, 'D', &lixo, &lixo, &lixo, &lixo); break;
     }
     
     if (!compararMatriz(mAux, m, n)) {
@@ -560,6 +674,15 @@ void imprimirMatriz(int **matriz, int n, int pontuacao, int nTrocar, int nVoltar
   int larguraTab = 8*n + n*x + 2; // largura do tabuleiro
   int k = (184 - larguraTab) / 2; // espaços para centralizar o tabuleiro
   
+  // Imprime as coordenadas do tabuleiro
+  espacos(k+1);
+  for (int i = 0; i < n; i++) {
+    espacos((int)floor(3+x/2.0)); // 4 pra cada lado fixo + numero de algarismos do maior número - 1 algarismo do i+1. Metade fica aqui.
+    printf("%d", i+1);
+    espacos((int)ceil(4+x/2.0)); // Outra metade aqui
+  }
+  printf("\n\n");
+  
   // Imprime a primeira linha
   espacos(k); // Centraliza o tabuleiro
   espacosBrancos(larguraTab);
@@ -578,7 +701,8 @@ void imprimirMatriz(int **matriz, int n, int pontuacao, int nTrocar, int nVoltar
     
     // Imprime a linha 4i + 3
     printf("\n");
-    espacos(k);
+    espacos(k-5);
+    printf(BOLD("%c    "), 65+i); // Imprime a coordenada das linhas
     for (int j = 0; j < n; j++) {
       printf(BG_WHITE("  "));
       espacosPretos(3);
@@ -868,7 +992,7 @@ void moverMatriz(int*** m, int n, char c){
 
 /***********************************************************/
 
-void somarBlocos(int*** m, int n, char c, int* pontuacao, int* nTrocar, int* nVoltar) {
+void somarBlocos(int*** m, int n, char c, int* pontuacao, int* nTrocar, int* nVoltar, int* n2048) {
   switch (c) {
     case 'W': // Cima
       for (int i = 0; i < n; i++) {
@@ -894,6 +1018,8 @@ void somarBlocos(int*** m, int n, char c, int* pontuacao, int* nTrocar, int* nVo
               (*nVoltar) += 1;
             } else if ((*m)[i][j] == BLOCOTROCAR) {  // Checa se foi formado um bloco que dá +1 "Voltar Jogada"
               (*nTrocar) += 1;
+            } else if ((*m)[i][j] == 2048) {
+              (*n2048) += 1;
             }
           }
         }
@@ -920,6 +1046,8 @@ void somarBlocos(int*** m, int n, char c, int* pontuacao, int* nTrocar, int* nVo
               (*nVoltar) += 1;
             } else if ((*m)[i][j] == BLOCOTROCAR) {  // Checa se foi formado um bloco que dá +1 "Voltar Jogada"
               (*nTrocar) += 1;
+            } else if ((*m)[i][j] == 2048) {
+              (*n2048) += 1;
             }
           }
         }
@@ -948,6 +1076,8 @@ void somarBlocos(int*** m, int n, char c, int* pontuacao, int* nTrocar, int* nVo
               (*nVoltar) += 1;
             } else if ((*m)[i][j] == BLOCOTROCAR) {  // Checa se foi formado um bloco que dá +1 "Voltar Jogada"
               (*nTrocar) += 1;
+            } else if ((*m)[i][j] == 2048) {
+              (*n2048) += 1;
             }
           }
         }
@@ -974,6 +1104,8 @@ void somarBlocos(int*** m, int n, char c, int* pontuacao, int* nTrocar, int* nVo
               (*nVoltar) += 1;
             } else if ((*m)[i][j] == BLOCOTROCAR) {  // Checa se foi formado um bloco que dá +1 "Voltar Jogada"
               (*nTrocar) += 1;
+            } else if ((*m)[i][j] == 2048) {
+              (*n2048) += 1;
             }
           }
         }
@@ -1027,8 +1159,9 @@ void limparBuffer() {
 
 // Converte o comando pra maiúsculo
 void letraMaiuscula(char* comando) {
-  if (97 <= (*comando) && (*comando) <= 122) // Checa se o texto está em minúsculo
-    (*comando) -= 32; // Converte o texto para maiúsculo
+  for (int i = 0; i < strlen(comando); i++)
+    if (97 <= comando[i] && comando[i] <= 122) // Checa se o caractere está em minúsculo
+      comando[i] -= 32; // Converte o caractere para maiúsculo
 }
 
 /***********************************************************/
