@@ -392,9 +392,9 @@ void carregarJogo(Save* save, int gerar, int primeiraJogada) {
       quebrar(2);
       imprimirTitulo(); 
       
-      // (*save).matriz[0][0] = 1024
-      // (*save).nVoltar = 10;
-      // (*save).nTrocar = 10;
+      (*save).matriz[0][0] = 1024;
+      (*save).nVoltar = 10;
+      (*save).nTrocar = 10;
       
       // Gerar um bloco novo
       if (!gerar) { // Caso a geração de blocos tenha sido desativada
@@ -556,7 +556,6 @@ void carregarJogo(Save* save, int gerar, int primeiraJogada) {
           jogo = 0;
           break;
       } else { // Comando inválido *********************************************************************************************/
-        limparBuffer();
         invalido();
         gerar = 0; // Impede que comandos errados gerem novos blocos
       }
@@ -567,6 +566,8 @@ void carregarJogo(Save* save, int gerar, int primeiraJogada) {
     liberarMatriz(&(*save).matrizAnterior, (*save).tamanhoTabuleiro);
     
 }
+
+/*************************************************************************************************************/
 
 // Checa se foi formado um bloco 2048
 int formou2048(int** m, int** mA, int n) {
